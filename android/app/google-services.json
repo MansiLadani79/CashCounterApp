@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173383722969",
+    "project_id": "cash-counter-f2fbe",
+    "storage_bucket": "cash-counter-f2fbe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173383722969:android:a57b589e5b490ad2f29bc8",
+        "android_client_info": {
+          "package_name": "com.example.cash_counter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0BRiia00yIK9I9xVuj_CicyV4SOd80GY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
