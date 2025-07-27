@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firebase_services.dart';
 import 'product/product_model.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cash_counter_app/theme/color/colors.dart';
 
 
 class Item {
@@ -172,13 +173,8 @@ class HomeController extends GetxController {
     );
 
     final now = DateTime.now();
-    String formattedDate =
-        '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-    await Printing.sharePdf(
-      bytes: await pdf.save(),
-      filename: '$formattedDate.pdf',
-    );
+   String fileName = "CashCounter_${DateTime.now().toIso8601String().replaceAll(":", "-")}.pdf";
+   await saveFileWithPicker(await pdf.save(), fileName);
   }
 
   void exportAsExcel() async {
@@ -253,12 +249,82 @@ class HomeController extends GetxController {
     }
   }
 
+  // Helper to sanitize file and directory names
+  String _sanitizeFileName(String name) {
+    return name.replaceAll(RegExp(r'[\\/:*?"<>|]'), '').trim();
+  }
+
   Future<void> saveFileWithPicker(Uint8List fileBytes, String fileName) async {
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
     if (selectedDirectory != null) {
-      final file = File('$selectedDirectory/$fileName');
-      await file.writeAsBytes(fileBytes);
-      Get.snackbar('Success', 'File saved to $selectedDirectory', duration: Duration(seconds: 3));
+      selectedDirectory = selectedDirectory.trim();
+      final sanitizedFileName = _sanitizeFileName(fileName);
+      final file = File('$selectedDirectory/$sanitizedFileName');
+      try {
+        await file.writeAsBytes(fileBytes);
+        Get.snackbar('Success', 'File saved to $selectedDirectory', duration: Duration(seconds: 3));
+      } catch (e) {
+        Get.dialog(
+          AlertDialog(
+            backgroundColor: backgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.folder_off, color: primaryColor, size: 28),
+                SizedBox(width: 8),
+                Text('Permission Denied', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold,fontSize: 21)),
+              ],
+            ),
+            content: RichText(
+              text: TextSpan(
+                style: TextStyle(color: textColor, fontSize: 16),
+                children: [
+                  TextSpan(text: 'please select or create new folder in '),
+                  TextSpan(text: 'DOWNLOAD', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+                  TextSpan(text: ' folder'),
+                ],
+              ),
+            ),
+            actionsPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.folder_open, color: buttonTextColor),
+                  label: Text('Select another folder', style: TextStyle(color: buttonTextColor, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () {
+                    Get.back();
+                    saveFileWithPicker(fileBytes, fileName);
+                  },
+                ),
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  child: Text("Don't save", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: primaryColor, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () {
+                    Get.back();
+                  },
+                ),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        );
+      }
     } else {
       Get.snackbar('Cancelled', 'No folder selected', duration: Duration(seconds: 3));
     }
@@ -339,14 +405,13 @@ class HomeController extends GetxController {
     }
   }
 
+  // Update all usages to use saveFileWithPicker and sanitize file names
   Future<void> saveAsExcel() async {
     try {
       final excel = Excel.createExcel();
       final sheet = excel['Sheet1'];
-
       // Add headers
       sheet.appendRow(['Product Name', 'Price', 'Quantity', 'Total']);
-
       // Get products with non-zero quantities
       List<Map<String, dynamic>> purchasedProducts = [];
       for (var product in products) {
@@ -362,7 +427,6 @@ class HomeController extends GetxController {
           });
         }
       }
-
       // Add data rows
       for (var product in purchasedProducts) {
         sheet.appendRow([
@@ -372,7 +436,6 @@ class HomeController extends GetxController {
           '₹${product['total'].toStringAsFixed(2)}',
         ]);
       }
-
       // Add totals
       sheet.appendRow(['', '', '', '']); // Ensures a visible blank row
       sheet.appendRow([]); // Additional spacing before product details
@@ -380,11 +443,9 @@ class HomeController extends GetxController {
       sheet.appendRow(
           ['Total Amount', '₹${totalAmount.value.toStringAsFixed(2)}']);
       sheet.appendRow(['Amount in Words', amountInWords.value]);
-
       final now = DateTime.now();
       String formattedDate =
-          '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
+          '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year.toString().substring(2)}_${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}';
       await saveFileWithPicker(Uint8List.fromList(excel.encode()!), '$formattedDate.xlsx');
     } catch (e) {
       print('Error saving Excel: $e');
