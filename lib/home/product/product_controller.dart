@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../component/common_text_field.dart';
 import '../../services/firebase_services.dart';
 import 'product_model.dart';
+import '../home_controller.dart';
 
 class ProductController extends GetxController {
   final nameController = TextEditingController();
@@ -195,6 +196,8 @@ class ProductController extends GetxController {
           .collection(FirebaseCollections.products)
           .doc(productId)
           .delete();
+      // Notify home controller to clean up controllers
+      Get.find<HomeController>().removeProductFromControllers(productId);
       Get.snackbar('Success', 'Product deleted successfully');
     } catch (e) {
       Get.snackbar('Error', 'Failed to delete product: ${e.toString()}');

@@ -68,10 +68,33 @@ class HomeController extends GetxController {
   RxInt totalNotes = 0.obs;
   RxString amountInWords = ''.obs;
 
+  void _recalculateAllTotals() {
+    for (var product in products) {
+      final qty = int.tryParse(productQuantityControllers[product.pid]?.text ?? '0') ?? 0;
+      productTotals[product.pid]?.value = product.price * qty;
+      productTotals[product.pid]?.refresh(); // Force UI update for each RxDouble
+    }
+    _calculateTotals();
+  }
+
   @override
   void onInit() {
     super.onInit();
     fetchProducts();
+    ever(products, (_) {
+      _cleanupControllersForDeletedProducts();
+      _recalculateAllTotals();
+    });
+  }
+
+  void _cleanupControllersForDeletedProducts() {
+    final currentIds = products.map((p) => p.pid).toSet();
+    final toRemove = productQuantityControllers.keys.where((id) => !currentIds.contains(id)).toList();
+    for (final id in toRemove) {
+      productQuantityControllers.remove(id);
+      productTotals.remove(id);
+    }
+    _calculateTotals();
   }
 
   void updateQuantity(Product product, String value) {
@@ -277,7 +300,7 @@ class HomeController extends GetxController {
                 Text('Permission Denied', style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold,fontSize: 21)),
               ],
             ),
-            content: RichText(
+            content: RichText( 
               text: TextSpan(
                 style: TextStyle(color: textColor, fontSize: 16),
                 children: [
@@ -485,5 +508,12 @@ class HomeController extends GetxController {
       return false;
     }
     return true;
+  }
+
+  // Call this after a product is deleted to clean up controllers and totals
+  void removeProductFromControllers(String productId) {
+    productQuantityControllers.remove(productId);
+    productTotals.remove(productId);
+    _calculateTotals();
   }
 }

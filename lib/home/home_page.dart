@@ -73,7 +73,10 @@ class HomePage extends GetView<HomeController> {
                               children: [
                                 Padding(
                                   padding: EdgeInsets.symmetric(vertical: 12),
+                                  child: GestureDetector(
+                                    onTap: () => Get.toNamed('/product'),
                                   child: Center(
+
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -86,15 +89,15 @@ class HomePage extends GetView<HomeController> {
                                           ),
                                         ),
                                         SizedBox(width: 4),
-                                        GestureDetector(
-                                          onTap: () => Get.toNamed('/product'),
-                                          child: Icon(
+                                       
+                                           Icon(
                                             Icons.edit,
                                             size: 14,
                                             color: primaryColor,
                                           ),
-                                        ),
+                                        
                                       ],
+                                      ),
                                     ),
                                   ),
                                 ),
